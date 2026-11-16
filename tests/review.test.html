@@ -36,6 +36,15 @@
         play([0, 9]);
         let entries = doc.querySelectorAll("#review-list li");
         assert(entries.length === 2, "Only missed questions should be listed once");
+        const colorProbe = doc.createElement("span");
+        colorProbe.style.color = "var(--bad)";
+        colorProbe.style.backgroundColor = "var(--bad-bg)";
+        doc.body.append(colorProbe);
+        const badColor = doc.defaultView.getComputedStyle(colorProbe).color;
+        const badBackground = doc.defaultView.getComputedStyle(colorProbe).backgroundColor;
+        assert(doc.defaultView.getComputedStyle(entries[0].querySelector("h4")).color === badColor, "Missed question headings must be red");
+        assert(doc.defaultView.getComputedStyle(entries[0]).backgroundColor === badBackground, "Missed question entries must have a red background");
+        colorProbe.remove();
         assert(doc.getElementById("final-score").textContent === "8", "Mixed score must remain correct");
         assert(doc.getElementById("wrong-count").textContent === "2", "Mixed wrong count must remain correct");
         assert(doc.activeElement.id === "result-title", "Results must receive focus");
