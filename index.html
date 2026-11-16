@@ -154,6 +154,16 @@
     .result-stats strong { display: block; font-size: 20px; }
     .result-stats div:first-child strong { color: var(--good); }
     .result-stats div:last-child strong { color: var(--bad); }
+    .review { margin-top: 24px; text-align: left; }
+    .review h3 { font-size: 18px; margin: 0 0 12px; }
+    .review p { max-width: none; }
+    .review-list { margin: 0; padding: 0; list-style: none; }
+    .review-list li { border-top: 1px solid var(--line); border-left: 3px solid var(--bad); padding: 16px 12px; background: var(--bad-bg); }
+    .review-list h4 { color: var(--bad); font-size: 15px; margin: 0 0 10px; overflow-wrap: anywhere; }
+    .review-list dl { margin: 0; font-size: 14px; }
+    .review-list dt { font-weight: 650; }
+    .review-list dd { margin: 0 0 8px; overflow-wrap: anywhere; }
+    .review-list dd:last-child { margin-bottom: 0; }
     @keyframes starlight { 50% { opacity: .22; } }
     @keyframes float { 50% { transform: translateY(-6px) rotate(3deg); } }
     @keyframes shake { 20%, 60% { transform: translateX(-6px); } 40%, 80% { transform: translateX(6px); } }
@@ -223,6 +233,11 @@
         <div class="result-number"><strong id="final-score"></strong><span> / 10</span></div>
         <div class="result-label">Your cosmic score</div>
         <div class="result-stats"><div><strong id="correct-count"></strong>Correct answers</div><div><strong id="wrong-count"></strong>Things to discover</div></div>
+        <section class="review" aria-labelledby="review-title">
+          <h3 id="review-title">Review missed questions</h3>
+          <p id="perfect-review" hidden>No missed questions. Perfect score!</p>
+          <ol id="review-list" class="review-list" role="list"></ol>
+        </section>
         <button id="restart" class="action">Explore again <span aria-hidden="true">↻</span></button>
         <p class="hint">Curiosity is always a good place to start.</p>
       </div>
@@ -247,6 +262,7 @@
     let current = 0;
     let score = 0;
     let answered = false;
+    let missed = [];
     function renderQuestion(focus = false) {
       answered = false;
       const item = questions[current];
@@ -280,6 +296,7 @@
       const item = questions[current];
       const correct = selected === item.correct;
       if (correct) score++;
+      else missed.push({ item, selected });
       $("score").textContent = score;
       [...$("answers").children].forEach((button, index) => {
         button.disabled = true;
@@ -323,12 +340,36 @@
         $("final-score").textContent = score;
         $("correct-count").textContent = score;
         $("wrong-count").textContent = questions.length - score;
+        $("perfect-review").hidden = missed.length !== 0;
+        $("review-list").replaceChildren();
+        missed.forEach(({ item, selected }) => {
+          const entry = document.createElement("li");
+          const question = document.createElement("h4");
+          question.textContent = item.question;
+          const details = document.createElement("dl");
+          [
+            ["Your answer", item.answers[selected]],
+            ["Correct answer", item.answers[item.correct]],
+            ["Fact", item.fact]
+          ].forEach(([label, value]) => {
+            const term = document.createElement("dt");
+            const description = document.createElement("dd");
+            term.textContent = label;
+            description.textContent = value;
+            details.append(term, description);
+          });
+          entry.append(question, details);
+          $("review-list").append(entry);
+        });
         $("result-title").focus();
       }
     });
     $("restart").addEventListener("click", () => {
       current = 0;
       score = 0;
+      missed = [];
+      $("review-list").replaceChildren();
+      $("perfect-review").hidden = true;
       $("score").textContent = "0";
       document.querySelector(".progress-fill").style.width = "0%";
       document.querySelector(".progress").setAttribute("aria-valuenow", "0");
